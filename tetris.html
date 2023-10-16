@@ -3,68 +3,74 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bootstrap demo</title>
+    <title>Tet ris</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <style>
-      #ana-container{
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        flex-wrap: wrap;
-        display: flex;
-      }
+#ana-container{
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-wrap: wrap;
+  display: flex;
+}
 
-      .ac{
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        flex-wrap: wrap;
-        display: flex;
+.ac{
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-wrap: wrap;
+  display: flex;
 
-      }
+}
 
-      .kutu{
-        border: 1px solid rgba(0,0,0,0.2);
-        justify-content: center;
-        align-items: center;
-        display: flex;
-        padding: 0;
-        margin: 0;
-      }
+.kutu{
+  border: 1px solid rgba(0,0,0,0.2);
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  padding: 0;
+  margin: 0;
+}
 
-      .dcenter{
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        flex-wrap: wrap;
-        display: flex;
-      }
+.dcenter{
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-wrap: wrap;
+  display: flex;
+}
 
-      #oyunBitti{
-        display: none;
-        justify-content: center;
-        align-items: center;
-        position: fixed;
-        background-color: rgba(0,0,0,0.6);
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-      }
+#oyunBitti{
+  display: none;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  background-color: rgba(0,0,0,0.6);
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
     </style>
   </head>
   <body>
-    <div class="container-fluid pt-5">
-      <div class="row">
-        <div class="col"></div>
-        <div class="col-10">
+    <div class="container-fluid pt-5" style="display: flex;justify-content: center;">
+      <div class="row" style="max-width: 100% !important;min-width: 40% !important;">
+        <div class="col">
           <div class="row">
-            <div class="col"></div>
-            <div class="col-6">
-
+            <div class="col">
               <div class="row">
                 <div class="col">
-                  <h1 class="text-center text-bg-danger rounded p-2"> Tetris Oyunu </h1>
+                  <div style="display: flex;width: 100% !important;justify-content: space-between;align-items: center;" class="text-bg-danger rounded m-3 p-3">
+                  <h3> Süre : <span id="sure">0</span></h3>
+                  <h1>Tetris Oyunu</h1>
+                  <h4 style="height: 100% !important;">
+                    <div style="display: flex;width: 100% !important;justify-content: space-between;align-items: center;flex-direction: column;height: 100% !important;">
+                      <span>Skor : <span id="skor">0</span></span>
+                      <span>Seviye : <span id="sev">1</span></span>
+                    </div>
+                  </h4>
+                  </div>
                 </div>
               </div>
 
@@ -81,10 +87,8 @@
               </div>
 
             </div>
-            <div class="col"></div>
           </div>
         </div>
-        <div class="col"></div>
       </div>
     </div>
 
@@ -99,7 +103,11 @@
 
         <div class="row">
           <div class="col">
-            <h3 class="alert alert-warning text-center p-3" id="mesaj">  </h3>
+            <h5 class="alert alert-warning text-center p-3"> <div style="width: 100% !important;display: flex;justify-content: space-around;align-items: center;">
+              <span id="finalSure"></span>
+              <span id="finalSkor"></span>
+              <span id="finalSev"></span>
+            </div>  </h5>
           </div>
         </div>
 
@@ -114,22 +122,23 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <script>
-      var asagiIn
+      var sure=0
+var asagiIn
 var inisHizi
 var skor = 0
 var blokId = 0
+var seviye = 1
 var sonrakiBloklar = []
+var normalInizHizi = 500
+var blokCekildimi = false
 var yokEdilenSatirlar = 0
-var yedekAlindiMi = false
 var sonInisHizi = inisHizi
-var blokKaydedildi = false
 var yedekBlok = { "varmi": false }
 var mevcutBlok = { "varmi": false }
 
 const satirSayisi = 16 /* Orjinal tetriste böyledir 16 */
 const sutunSayisi = 8 /* Orjinal tetriste böyledir 8 */
-const kutuBuyuklugu = 35
-const normalInizHizi = 500
+const kutuBuyuklugu = 25
 const blokAdlari = ["iblock", "lblock", "reverselblock", "square", "tblock","zblock","sblock"]
 const bloklar = {
   "iblock": {
@@ -295,7 +304,7 @@ const bloklar = {
     ],
   },
   "sblock": {
-    "renkSinifi": "bg-danger",
+    "renkSinifi": "bg-success",
     "t1": [
       { "r": 0,"c": 0 },
       { "r": -1,"c": 0 },
@@ -349,10 +358,14 @@ const kurulum = () => {
 }
 
 const oyunBitti = () => {
+  const a = sure
   document.getElementById('oyunBitti').style.display = 'flex'
-  document.getElementById('mesaj').innerHTML = `Skorun : ${skor}`
+  document.getElementById('finalSkor').innerHTML = `Skorun : ${skor}`
+  document.getElementById('finalSure').innerHTML = `Süre : ${a}`
+  document.getElementById('finalSev').innerHTML = `Max Seviye : ${seviye}`
   yercekiminiKapat()
   blokCek = () => {}
+  clearInterval(sureArttir)
   return
 }
 
@@ -368,7 +381,6 @@ const yercekiminiGuncelle = (sure) => {
 const yercekiminiAc = () => asagiIn = setInterval(() => {
   if (mevcutBlok["varmi"]) {
     let sorun = false
-
 
     if (mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`]) mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`].forEach(newId => {
       const satir = mevcutBlok["merkez"]["r"] + newId["r"]
@@ -518,36 +530,6 @@ const sagaGit = () => {
 }
 
 /* Blok Hareket */
-// const blokKaydet = async () => {
-//   // asdf
-//   if(!yedekAlindiMi){
-//     yedekAlindiMi = false
-//     blokKaydedildi = true
-
-//     const yedekBlokKutulari = document.querySelectorAll('.yedekBlokKutu')
-//     yedekBlokKutulari.forEach((kutu)=>{
-//       if(kutu.classList.value.includes('bg-')) kutu.classList.remove(`bg-${kutu.classList.value.split('bg-')[1]}`)
-//     })
-  
-//     const mevcutBloklar = document.querySelectorAll(`[blokId="${mevcutBlok["blokId"]}"]`)
-//     mevcutBloklar.forEach(blok=>{
-//       blok.classList.remove(`bg-${blok.classList.value.split('bg-')[1]}`)
-//       blok.setAttribute('blokId','yok')
-//     })
-//     // yercekiminiKapat()
-
-//     if(!yedekBlok["varmi"]){
-//       yedekBlok = mevcutBlok
-//       yedekBlok["pozisyon"] = 'yok'
-//       yedekBlok["dongu"] = 0
-//       yedekBlok["tipNo"] = 1
-//       yedekBlok["merkez"] = { "r":2, "c":4 }
-//       yedekBlok["varmi"] = true
-//       blokId++
-//     }
-//   }
-// }
-
 const blokGoster = () => {
   document.querySelectorAll('.sonrakiBlokKutu').forEach(el => {
     const satir = el.classList[2]
@@ -617,15 +599,12 @@ const blokCevir = () => {
   }
 }
 var blokCek = () => {
-  yedekAlindiMi = false
   satirKontrol()
   let cekildimi = false
   sonrakiBloklar.length == 3 ? cekildimi = true : sonrakiBloklar.push(bloklar[blokAdlari[Math.floor(Math.random() * blokAdlari.length)]])
-  console.log('asd')
 
   if (cekildimi) {
-    if (mevcutBlok["dongu"] != 0 && !blokKaydedildi) {
-      console.log(blokKaydedildi)
+    if (mevcutBlok["dongu"] != 0) {
       yercekiminiGuncelle(normalInizHizi)
       mevcutBlok["dongu"] = 0
       mevcutBlok["blokId"] = blokId
@@ -639,10 +618,72 @@ var blokCek = () => {
       mevcutBlok["pozisyon"] = 'yok'
       blokId++
       skor += 100
+      skorDegisti()
       blokGoster()
-    } else oyunBitti()
+    } else if(mevcutBlok["dongu"]==0) oyunBitti()
+    blokCekildimi = true
   }
 }
+const blokKaydet = ()=>{
+  // asdf
+
+  if(yedekBlok["varmi"] == false){
+    yedekBlok = { varmi:true, dongu:0, blokId:mevcutBlok["blokId"], blok:mevcutBlok["blok"], tipNo:1, "merkez":{ "r":2, "c":4 }, "pozisyon":'yok' }
+
+    if(mevcutBlok["pozisyon"]!='yok') mevcutBlok["pozisyon"].forEach(id=>{
+      const el = document.getElementById(id)
+      el.setAttribute('blokId','yok')
+      el.classList.remove(mevcutBlok["blok"]["renkSinifi"])
+    })
+
+    const baslangicMerkezi = { "r":2, "c":2 }
+
+    yedekBlok["blok"][`t${yedekBlok['tipNo']}`].forEach(newId=>{
+      const satir = baslangicMerkezi.r + newId.r
+      const sutun = baslangicMerkezi.c + newId.c
+      const id = `yr${satir}yc${sutun}`
+      const el = document.getElementById(id)
+      el.classList.add(yedekBlok["blok"]["renkSinifi"])
+    })
+
+    mevcutBlok = { varmi:false }
+
+    blokCek()
+    blokCek()
+  }else{
+
+    var mb = { varmi:true, dongu:0, blokId:mevcutBlok["blokId"], blok:mevcutBlok["blok"], tipNo:1, "merkez":{ "r":2, "c":4 }, "pozisyon":'yok' }
+
+    if(mevcutBlok["pozisyon"]!='yok') mevcutBlok["pozisyon"].forEach(id=>{
+      const el = document.getElementById(id)
+      el.classList.remove(mevcutBlok["blok"]["renkSinifi"])
+      el.setAttribute('blokId','yok')
+    })
+
+    mevcutBlok = yedekBlok
+
+    const yedekBlokKutulari = document.querySelectorAll('.yedekBlokKutu')
+    if(yedekBlokKutulari.length>0) yedekBlokKutulari.forEach(el=>{
+      if(el.classList.value.includes('bg-')) el.classList.remove(`bg-${el.classList.value.split('bg-')[1]}`)
+    })
+
+    const yedekBlokBaslangicMerkezi = { "r":2, "c":2 }
+    mb["blok"][`t${mb["tipNo"]}`].forEach(newId=>{
+      const satir = yedekBlokBaslangicMerkezi["r"] + newId["r"]
+      const sutun = yedekBlokBaslangicMerkezi["c"] + newId["c"]
+      const el = document.getElementById(`yr${satir}yc${sutun}`)
+      el.classList.add(mb["blok"]["renkSinifi"])
+    })
+
+    
+
+    yedekBlok = mb
+  }
+
+  // yercekiminiKapat()
+}
+
+const log = (t)=>console.log(t)
 
 /* Diğer */
 const satirKontrol = () => {
@@ -658,6 +699,7 @@ const satirKontrol = () => {
     if (yapilan == sutunSayisi) {
       yokEdilenSatirlar++
       skor += 1000
+      skorDegisti()
       satirYokEt(satir)
     }
   }
@@ -672,7 +714,17 @@ const satirYokEt = async (satir) => {
   })
   satirlariKaydir(satir)
 }
+const skorDegisti = ()=>{
+  if(skor>=5000) {seviye=2;normalInizHizi = 300}
+  if(skor>=7500) {seviye=3;normalInizHizi = 250}
+  if(skor>=10000) {seviye=4;normalInizHizi = 200}
+  if(skor>=17500) {seviye=5;normalInizHizi = 150}
+  if(skor>=25000) {seviye=6;normalInizHizi = 100}
+  document.getElementById('skor').innerHTML = skor
+  document.getElementById('sev').innerHTML = seviye
+}
 
+var sureArttir = setInterval(()=>{sure += 1;document.getElementById('sure').innerHTML = sure},1000)
 
 async function satirlariKaydir(patlayanSatir) {
 
@@ -716,6 +768,8 @@ document.addEventListener('keydown', (e) => {
   else if (e.key == "ArrowLeft") solaGit()
   else if (e.key == "ArrowDown") altaGit()
   else if (e.key == "c") blokKaydet()
+  else if (e.key == "Escape") yercekiminiKapat()
+  else if (e.key == "p" || e.key == "P") yercekiminiGuncelle(normalInizHizi)
   else if (e.key === " " || e.key == "Enter") tamamenIndir()
 })
 
