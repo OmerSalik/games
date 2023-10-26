@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="index.css">
+  <title>Ömer Salık</title>
+</head>
+<body>
+  <table class="w-100 h-100">
+    <tr class="w-100 h-100">
+      <td class="h-100 a" style="width: 10%;">
+        <div class="omerflex">
+          <div class="box lostButton" onclick="imLost()">
+            <b>Kayboldum (Q)</b>
+          </div>
+
+          <div class="box">
+            <b>Hız : <b id="speed">0</b></b>
+          </div>
+
+          <div class="box">
+            <b>Açı : <b id="angle">01</b></b>
+          </div>
+
+          <div class="box">
+            <b>Vites : <b id="gear">1</b></b>
+          </div>
+
+          <div class="box">
+            <b>Vites Sayacı : <b id="gearTimer">0</b></b>
+          </div>
+
+          <div class="box gearUp" onclick="car.gearUp()">
+            <b> Arttır (SHFIT)</b>
+          </div>
+
+          <div class="box gearDown" onclick="car.gearDown()">
+            <b>Düşür (CTRL)</b>
+          </div>
+        </div>
+      </td>
+      <td class="h-100" style="width: 80%;">
+        <div id="gameContent">
+          <canvas id="myCanvas"></canvas>
+        </div>
+      </td>
+      <td class="h-100" style="width: 10%;"></td>
+    </tr>
+  </table>
+  <script src="../class/utils.js"></script>
+  <script src="class/sensor.js"></script>
+  <script src="class/road.js"></script>
+  <script src="class/controls.js"></script>
+  <script src="class/car.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>
