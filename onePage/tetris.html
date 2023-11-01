@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tet ris</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+#ana-container{
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-wrap: wrap;
+  display: flex;
+}
+
+.ac{
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-wrap: wrap;
+  display: flex;
+
+}
+
+.kutu{
+  border: 1px solid rgba(0,0,0,0.2);
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  padding: 0;
+  margin: 0;
+}
+
+.dcenter{
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-wrap: wrap;
+  display: flex;
+}
+
+#oyunBitti{
+  display: none;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  background-color: rgba(0,0,0,0.6);
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+    </style>
+  </head>
+  <body>
+    <div class="container-fluid pt-5" style="display: flex;justify-content: center;">
+      <div class="row" style="max-width: 100% !important;min-width: 40% !important;">
+        <div class="col">
+          <div class="row">
+            <div class="col">
+              <div class="row">
+                <div class="col">
+                  <div style="display: flex;width: 100% !important;justify-content: space-between;align-items: center;" class="text-bg-danger rounded m-3 p-3">
+                  <h3> Süre : <span id="sure">0</span></h3>
+                  <h1>Tetris Oyunu</h1>
+                  <h4 style="height: 100% !important;">
+                    <div style="display: flex;width: 100% !important;justify-content: space-between;align-items: center;flex-direction: column;height: 100% !important;">
+                      <span>Skor : <span id="skor">0</span></span>
+                      <span>Seviye : <span id="sev">1</span></span>
+                    </div>
+                  </h4>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-3 dcenter" style="align-items: start;">
+                  <div class="ac" id="yedekBlok"></div>
+                </div>
+                <div class="col dcenter">
+                  <div class="ac" id="ana-container"></div>
+                </div>
+                <div class="col-3 dcenter" style="align-items: start;">
+                  <div class="ac" id="sonrakiBlok"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="oyunBitti">
+      <div class="container">
+
+        <div class="row">
+          <div class="col">
+            <h1 class="text-bg-danger text-center p-3"> Oyun Bitti </h1>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <h5 class="alert alert-warning text-center p-3"> <div style="width: 100% !important;display: flex;justify-content: space-around;align-items: center;">
+              <span id="finalSure"></span>
+              <span id="finalSkor"></span>
+              <span id="finalSev"></span>
+            </div>  </h5>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <button class="btn btn-info w-100 p-3" onclick="window.location.reload()"> Yeniden Oyna </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script>
+      var sure=0
+var asagiIn
+var inisHizi
+var skor = 0
+var blokId = 0
+var seviye = 1
+var sonrakiBloklar = []
+var normalInizHizi = 500
+var blokCekildimi = false
+var yokEdilenSatirlar = 0
+var sonInisHizi = inisHizi
+var yedekBlok = { "varmi": false }
+var mevcutBlok = { "varmi": false }
+
+const satirSayisi = 16 /* Orjinal tetriste böyledir 16 */
+const sutunSayisi = 8 /* Orjinal tetriste böyledir 8 */
+const kutuBuyuklugu = 25
+const blokAdlari = ["iblock", "lblock", "reverselblock", "square", "tblock","zblock","sblock"]
+const bloklar = {
+  "iblock": {
+    "renkSinifi": "bg-secondary",
+    "t1": [
+      { "r": 0,"c": 0 },
+      { "r": 1,"c": 0 },
+      { "r": -1,"c": 0 },
+      { "r": -2,"c": 0 }
+    ],
+    "t2": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": 1 },
+      { "r": 0,"c": -1 },
+      { "r": 0,"c": -2 }
+    ],
+    "t3": [
+      { "r": 0,"c": 0 },
+      { "r": 1,"c": 0 },
+      { "r": -1,"c": 0 },
+      { "r": -2,"c": 0 }
+    ],
+    "t4": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": 1 },
+      { "r": 0,"c": -1 },
+      { "r": 0,"c": -2 }
+    ]
+  },
+  "lblock": {
+    "renkSinifi": "bg-info",
+    "t1": [
+      { "r": 0,"c": 0 },
+      { "r": -1,"c": 0 },
+      { "r": 1,"c": 0 },
+      { "r": 1,"c": 1 }
+    ],
+    "t2": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": 0,"c": 1 },
+      { "r": -1,"c": 1 }
+    ],
+    "t3": [
+      { "r": 0,"c": 0 },
+      { "r": -1,"c": 0 },
+      { "r": -1,"c": -1 },
+      { "r": 1,"c": 0 }
+    ],
+    "t4": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": 1,"c": -1 },
+      { "r": 0,"c": 1 }
+    ]
+  },
+  "reverselblock": {
+    "renkSinifi": "bg-primary",
+    "t1": [
+      { "r": 0,"c": 0 },
+      { "r": -1,"c": 0 },
+      { "r": 1,"c": 0 },
+      { "r": 1,"c": -1 }
+    ],
+    "t2": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": 0,"c": 1 },
+      { "r": 1,"c": 1 }
+    ],
+    "t3": [
+      { "r": 0,"c": 0 },
+      { "r": -1,"c": 0 },
+      { "r": -1,"c": 1 },
+      { "r": 1,"c": 0 }
+    ],
+    "t4": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": -1,"c": -1 },
+      { "r": 0,"c": 1 }
+    ]
+  },
+  "square": {
+    "renkSinifi": "bg-warning",
+    "t1": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": -1,"c": -1 },
+      { "r": -1,"c": 0 }
+    ],
+    "t2": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": -1,"c": -1 },
+      { "r": -1,"c": 0 }
+    ],
+    "t3": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": -1,"c": -1 },
+      { "r": -1,"c": 0 }
+    ],
+    "t4": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": -1,"c": -1 },
+      { "r": -1,"c": 0 }
+    ]
+  },
+  "tblock": {
+    "renkSinifi": "bg-danger",
+    "t1": [
+      { "r": 0,"c": 0 },
+      { "r": -1,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": 0,"c": 1 }
+    ],
+    "t2": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": -1,"c": 0 },
+      { "r": 1,"c": 0 }
+    ],
+    "t3": [
+      { "r": 0,"c": 0 },
+      { "r": 1,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": 0,"c": 1 }
+    ],
+    "t4": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": 1 },
+      { "r": -1,"c": 0 },
+      { "r": 1,"c": 0 }
+    ]
+  },
+  "zblock": {
+    "renkSinifi": "bg-danger",
+    "t1": [
+      { "r": 0,"c": 0 },
+      { "r": -1,"c": 0 },
+      { "r": -1,"c": -1 },
+      { "r": 0,"c": 1 }
+    ],
+    "t2": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": 1,"c": -1 },
+      { "r": -1,"c": 0 }
+    ],
+    "t3": [
+      { "r": 0,"c": 0 },
+      { "r": -1,"c": 0 },
+      { "r": -1,"c": -1 },
+      { "r": 0,"c": 1 }
+    ],
+    "t4": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": -1 },
+      { "r": 1,"c": -1 },
+      { "r": -1,"c": 0 }
+    ],
+  },
+  "sblock": {
+    "renkSinifi": "bg-success",
+    "t1": [
+      { "r": 0,"c": 0 },
+      { "r": -1,"c": 0 },
+      { "r": -1,"c": 1 },
+      { "r": 0,"c": -1 }
+    ],
+    "t2": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": 1 },
+      { "r": 1,"c": 1 },
+      { "r": -1,"c": 0 }
+    ],
+    "t3": [
+      { "r": 0,"c": 0 },
+      { "r": -1,"c": 0 },
+      { "r": -1,"c": 1 },
+      { "r": 0,"c": -1 }
+    ],
+    "t4": [
+      { "r": 0,"c": 0 },
+      { "r": 0,"c": 1 },
+      { "r": 1,"c": 1 },
+      { "r": -1,"c": 0 }
+    ],
+  }
+}
+const kurulum = () => {
+  const anaContainer = document.getElementById('ana-container')
+  const yedekBlokContainer = document.getElementById('yedekBlok')
+  const sonrakiBlokContainer = document.getElementById('sonrakiBlok')
+  anaContainer.innerHTML = ''
+  anaContainer.style.width = `${(kutuBuyuklugu*sutunSayisi)+(sutunSayisi*2)}px`
+  sonrakiBlokContainer.style.width = `${(kutuBuyuklugu*4)+(4*2)}px`
+  yedekBlokContainer.style.width = `${(kutuBuyuklugu*4)+(4*2)}px`
+
+  for (let satir = 0; satir < satirSayisi; satir++)
+    for (let sutun = 0; sutun < sutunSayisi; sutun++) anaContainer.innerHTML += `<div class="oyunKutu kutu satir${satir} sutun${sutun}" id="r${satir}c${sutun}" satir="${satir}" sutun="${sutun}" blokId="yok"></div>`
+
+  for (let satir = 0; satir < 4; satir++)
+    for (let sutun = 0; sutun < 4; sutun++) sonrakiBlokContainer.innerHTML += `<div class="sonrakiBlokKutu kutu ssatir${satir} ssutun${sutun}" id="sr${satir}sc${sutun}" blokId="yok"></div>`
+
+  for (let satir = 0; satir < 4; satir++)
+    for (let sutun = 0; sutun < 4; sutun++) yedekBlokContainer.innerHTML += `<div class="yedekBlokKutu kutu ysatir${satir} ysutun${sutun}" id="yr${satir}yc${sutun}"></div>`
+
+  document.querySelectorAll('.kutu').forEach(el => {
+    el.style.width = `${kutuBuyuklugu}px`
+    el.style.height = `${kutuBuyuklugu}px`
+  })
+
+  yercekiminiGuncelle(0)
+}
+
+const oyunBitti = () => {
+  const a = sure
+  document.getElementById('oyunBitti').style.display = 'flex'
+  document.getElementById('finalSkor').innerHTML = `Skorun : ${skor}`
+  document.getElementById('finalSure').innerHTML = `Süre : ${a}`
+  document.getElementById('finalSev').innerHTML = `Max Seviye : ${seviye}`
+  yercekiminiKapat()
+  blokCek = () => {}
+  clearInterval(sureArttir)
+  return
+}
+
+/* Yer Çekimi */
+const yercekiminiKapat = () => {
+  if (asagiIn) clearInterval(asagiIn)
+}
+const yercekiminiGuncelle = (sure) => {
+  yercekiminiKapat()
+  inisHizi = sure
+  yercekiminiAc()
+}
+const yercekiminiAc = () => asagiIn = setInterval(() => {
+  if (mevcutBlok["varmi"]) {
+    let sorun = false
+
+    if (mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`]) mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`].forEach(newId => {
+      const satir = mevcutBlok["merkez"]["r"] + newId["r"]
+      const sutun = mevcutBlok["merkez"]["c"] + newId["c"]
+      const id = `r${satir}c${sutun}`
+      const el = document.getElementById(id)
+      if (el) {
+        if (el.getAttribute('blokId') != 'yok' && el.getAttribute('blokId') != mevcutBlok["blokId"]) sorun = true
+      } else sorun = true
+    })
+
+    if (!sorun) {
+      if (mevcutBlok["pozisyon"] != 'yok') mevcutBlok["pozisyon"].forEach(id => {
+        document.getElementById(id).classList.remove(mevcutBlok["blok"]["renkSinifi"])
+        document.getElementById(id).setAttribute('blokId', 'yok')
+      })
+
+      let yeniPozisyon = []
+      if (mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`]) mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`].forEach(newId => {
+        const satir = mevcutBlok["merkez"]["r"] + newId["r"]
+        const sutun = mevcutBlok["merkez"]["c"] + newId["c"]
+        const id = `r${satir}c${sutun}`
+        const el = document.getElementById(id)
+        el.classList.add(mevcutBlok["blok"]["renkSinifi"])
+        el.setAttribute('blokId', mevcutBlok["blokId"])
+        yeniPozisyon.push(id)
+      })
+      blokKaydedildi = false
+      mevcutBlok["dongu"]++
+      mevcutBlok["merkez"]["r"]++
+      mevcutBlok["pozisyon"] = yeniPozisyon
+    } else blokCek()
+
+  } else blokCek()
+}, inisHizi)
+
+/* hareket */
+const tamamenIndir = () => yercekiminiGuncelle(1)
+
+const altaGit = () => {
+  yercekiminiGuncelle(1)
+  setTimeout(()=>{yercekiminiGuncelle(normalInizHizi)}, 1)
+}
+
+const solaGit = () => {
+  if (mevcutBlok["pozisyon"].length > 0 && mevcutBlok["pozisyon"] != 'yok') {
+
+    let sorun = false
+    if (mevcutBlok["pozisyon"] != 'yok') mevcutBlok["pozisyon"].forEach(id => {
+      const satir = Number(id.split('c')[0].split('r')[1])
+      const sutun = Number(id.split('c')[1])
+      const yeniId = `r${satir}c${sutun-1}`
+      const yeniId2 = `r${satir+1}c${sutun-1}`
+      const el = document.getElementById(yeniId)
+      const el2 = document.getElementById(yeniId2)
+      if (el) {
+        if (el.getAttribute('blokId') != 'yok' && el.getAttribute('blokId') != mevcutBlok["blokId"]) sorun = true
+      } else sorun = true
+
+      if (el2) {
+        if (el2.getAttribute('blokId') != 'yok' && el2.getAttribute('blokId') != mevcutBlok["blokId"]) sorun = true
+      } else sorun = true
+    })
+
+    let nekadarVar = 0
+    if (mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`]) mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`].forEach(newId => {
+      const satir = mevcutBlok["merkez"]["r"] + newId["r"]
+      const sutun = mevcutBlok["merkez"]["c"] + newId["c"]
+      const id = `r${satir}c${sutun}`
+      const el = document.getElementById(id)
+      if (el) nekadarVar++
+    })
+
+
+    if (nekadarVar != 4) sorun = true
+    if (!sorun) {
+      if (mevcutBlok["pozisyon"] != 'yok') mevcutBlok["pozisyon"].forEach(id => {
+        document.getElementById(id).classList.remove(mevcutBlok["blok"]["renkSinifi"])
+        document.getElementById(id).setAttribute('blokId', 'yok')
+      })
+      mevcutBlok["merkez"]["c"]--
+      let yeniPozisyon = []
+      mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`].forEach(newId => {
+        const satir = mevcutBlok["merkez"]["r"] + newId["r"]
+        const sutun = mevcutBlok["merkez"]["c"] + newId["c"]
+        const id = `r${satir}c${sutun}`
+        const el = document.getElementById(id)
+        el.classList.add(mevcutBlok["blok"]["renkSinifi"])
+        el.setAttribute('blokId', mevcutBlok["blokId"])
+        yeniPozisyon.push(id)
+      })
+      mevcutBlok["pozisyon"] = yeniPozisyon
+    }
+
+  }
+}
+const sagaGit = () => {
+  if (mevcutBlok["pozisyon"].length > 0 && mevcutBlok["pozisyon"] != 'yok') {
+
+    let sorun = false
+    if (mevcutBlok["pozisyon"] != 'yok') mevcutBlok["pozisyon"].forEach(id => {
+      const satir = Number(id.split('c')[0].split('r')[1])
+      const sutun = Number(id.split('c')[1])
+      const yeniId = `r${satir}c${sutun+1}`
+      const yeniId2 = `r${satir+1}c${sutun+1}`
+      const el = document.getElementById(yeniId)
+      const el2 = document.getElementById(yeniId2)
+      if (el) {
+        if (el.getAttribute('blokId') != 'yok' && el.getAttribute('blokId') != mevcutBlok["blokId"]) sorun = true
+      } else sorun = true
+
+      if (el2) {
+        if (el2.getAttribute('blokId') != 'yok' && el2.getAttribute('blokId') != mevcutBlok["blokId"]) sorun = true
+      } else sorun = true
+    })
+    let nekadarVar = 0
+
+    if (mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`]) mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`].forEach(newId => {
+      const satir = mevcutBlok["merkez"]["r"] + newId["r"]
+      const sutun = mevcutBlok["merkez"]["c"] + newId["c"]
+      const id = `r${satir}c${sutun}`
+      const el = document.getElementById(id)
+      if (el) nekadarVar++
+    })
+
+    if (nekadarVar != 4) sorun = true
+    if (!sorun) {
+      if (mevcutBlok["pozisyon"] != 'yok') mevcutBlok["pozisyon"].forEach(id => {
+        document.getElementById(id).classList.remove(mevcutBlok["blok"]["renkSinifi"])
+        document.getElementById(id).setAttribute('blokId', 'yok')
+      })
+      mevcutBlok["merkez"]["c"]++
+      let yeniPozisyon = []
+      if (mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`]) mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`].forEach(newId => {
+        const satir = mevcutBlok["merkez"]["r"] + newId["r"]
+        const sutun = mevcutBlok["merkez"]["c"] + newId["c"]
+        const id = `r${satir}c${sutun}`
+        const el = document.getElementById(id)
+        el.classList.add(mevcutBlok["blok"]["renkSinifi"])
+        el.setAttribute('blokId', mevcutBlok["blokId"])
+        yeniPozisyon.push(id)
+      })
+      mevcutBlok["pozisyon"] = yeniPozisyon
+    }
+
+  }
+}
+
+/* Blok Hareket */
+const blokGoster = () => {
+  document.querySelectorAll('.sonrakiBlokKutu').forEach(el => {
+    const satir = el.classList[2]
+    const sutun = el.classList[3]
+    el.classList.value = `sonrakiBlokKutu kutu ${satir} ${sutun}`
+  })
+
+  const baslangic = {
+    "r": 2,
+    "c": 2
+  }
+  sonrakiBloklar[0]["t1"].forEach(newId => {
+    const satir = baslangic.r + newId.r
+    const sutun = baslangic.c + newId.c
+    const id = `sr${satir}sc${sutun}`
+    document.getElementById(id).classList.add(sonrakiBloklar[0]["renkSinifi"])
+  })
+
+  let yeniPozisyon = []
+  if (mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`]) {
+    mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`].forEach(newId => {
+      const satir = mevcutBlok["merkez"]["r"] + newId["r"]
+      const sutun = mevcutBlok["merkez"]["c"] + newId["c"]
+      const id = `r${satir}c${sutun}`
+      const el = document.getElementById(id)
+      el.classList.add(mevcutBlok["blok"]["renkSinifi"])
+      yeniPozisyon.push(id)
+    })
+    mevcutBlok["pozisyon"] = yeniPozisyon
+    mevcutBlok["merkez"]["r"]++
+  }
+}
+const blokCevir = () => {
+  let sorun = false
+
+  var yeniNo = mevcutBlok["tipNo"] - 1 == 0 ? 4 : mevcutBlok["tipNo"] - 1
+  mevcutBlok["blok"][`t${yeniNo}`].forEach(newId => {
+    const satir = mevcutBlok["merkez"]["r"] + newId["r"]
+    const sutun = mevcutBlok["merkez"]["c"] + newId["c"]
+    const id = `r${satir}c${sutun}`
+    const el = document.getElementById(id)
+    if (el) {
+      if (el.getAttribute('blokId') != 'yok' && el.getAttribute('blokId') != mevcutBlok["blokId"]) sorun = true
+    } else sorun = true
+  })
+
+  if (!sorun) {
+    mevcutBlok["tipNo"] = mevcutBlok["tipNo"] - 1 == 0 ? 4 : mevcutBlok["tipNo"] - 1
+
+    if (mevcutBlok["pozisyon"] != 'yok') mevcutBlok["pozisyon"].forEach(id => {
+      const el = document.getElementById(id)
+      el.classList.remove(mevcutBlok["blok"]["renkSinifi"])
+      el.setAttribute('blokId', 'yok')
+    })
+
+    let yeniPozisyon = []
+    mevcutBlok["blok"][`t${mevcutBlok["tipNo"]}`].forEach(newId => {
+      const satir = mevcutBlok["merkez"]["r"] + newId["r"]
+      const sutun = mevcutBlok["merkez"]["c"] + newId["c"]
+      const id = `r${satir}c${sutun}`
+      const el = document.getElementById(id)
+      el.classList.add(mevcutBlok["blok"]["renkSinifi"])
+      el.setAttribute('blokId', mevcutBlok["blokId"])
+      yeniPozisyon.push(id)
+    })
+    mevcutBlok["pozisyon"] = yeniPozisyon
+  }
+}
+var blokCek = () => {
+  satirKontrol()
+  let cekildimi = false
+  sonrakiBloklar.length == 3 ? cekildimi = true : sonrakiBloklar.push(bloklar[blokAdlari[Math.floor(Math.random() * blokAdlari.length)]])
+
+  if (cekildimi) {
+    if (mevcutBlok["dongu"] != 0) {
+      yercekiminiGuncelle(normalInizHizi)
+      mevcutBlok["dongu"] = 0
+      mevcutBlok["blokId"] = blokId
+      mevcutBlok["varmi"] = true
+      mevcutBlok["blok"] = sonrakiBloklar.shift()
+      mevcutBlok["tipNo"] = 1
+      mevcutBlok["merkez"] = {
+        "r": 2,
+        "c": 4
+      }
+      mevcutBlok["pozisyon"] = 'yok'
+      blokId++
+      skor += 100
+      skorDegisti()
+      blokGoster()
+    } else if(mevcutBlok["dongu"]==0) oyunBitti()
+    blokCekildimi = true
+  }
+}
+const blokKaydet = ()=>{
+  // asdf
+
+  if(yedekBlok["varmi"] == false){
+    yedekBlok = { varmi:true, dongu:0, blokId:mevcutBlok["blokId"], blok:mevcutBlok["blok"], tipNo:1, "merkez":{ "r":2, "c":4 }, "pozisyon":'yok' }
+
+    if(mevcutBlok["pozisyon"]!='yok') mevcutBlok["pozisyon"].forEach(id=>{
+      const el = document.getElementById(id)
+      el.setAttribute('blokId','yok')
+      el.classList.remove(mevcutBlok["blok"]["renkSinifi"])
+    })
+
+    const baslangicMerkezi = { "r":2, "c":2 }
+
+    yedekBlok["blok"][`t${yedekBlok['tipNo']}`].forEach(newId=>{
+      const satir = baslangicMerkezi.r + newId.r
+      const sutun = baslangicMerkezi.c + newId.c
+      const id = `yr${satir}yc${sutun}`
+      const el = document.getElementById(id)
+      el.classList.add(yedekBlok["blok"]["renkSinifi"])
+    })
+
+    mevcutBlok = { varmi:false }
+
+    blokCek()
+    blokCek()
+  }else{
+
+    var mb = { varmi:true, dongu:0, blokId:mevcutBlok["blokId"], blok:mevcutBlok["blok"], tipNo:1, "merkez":{ "r":2, "c":4 }, "pozisyon":'yok' }
+
+    if(mevcutBlok["pozisyon"]!='yok') mevcutBlok["pozisyon"].forEach(id=>{
+      const el = document.getElementById(id)
+      el.classList.remove(mevcutBlok["blok"]["renkSinifi"])
+      el.setAttribute('blokId','yok')
+    })
+
+    mevcutBlok = yedekBlok
+
+    const yedekBlokKutulari = document.querySelectorAll('.yedekBlokKutu')
+    if(yedekBlokKutulari.length>0) yedekBlokKutulari.forEach(el=>{
+      if(el.classList.value.includes('bg-')) el.classList.remove(`bg-${el.classList.value.split('bg-')[1]}`)
+    })
+
+    const yedekBlokBaslangicMerkezi = { "r":2, "c":2 }
+    mb["blok"][`t${mb["tipNo"]}`].forEach(newId=>{
+      const satir = yedekBlokBaslangicMerkezi["r"] + newId["r"]
+      const sutun = yedekBlokBaslangicMerkezi["c"] + newId["c"]
+      const el = document.getElementById(`yr${satir}yc${sutun}`)
+      el.classList.add(mb["blok"]["renkSinifi"])
+    })
+
+    
+
+    yedekBlok = mb
+  }
+
+  // yercekiminiKapat()
+}
+
+const log = (t)=>console.log(t)
+
+/* Diğer */
+const satirKontrol = () => {
+  for (let satir = 0; satir < satirSayisi; satir++) {
+    let yapilan = 0
+
+    for (let sutun = 0; sutun < sutunSayisi; sutun++) {
+      const id = `r${satir}c${sutun}`
+      const el = document.getElementById(id)
+      if (el.getAttribute('blokId') != 'yok') yapilan++
+    }
+
+    if (yapilan == sutunSayisi) {
+      yokEdilenSatirlar++
+      skor += 1000
+      skorDegisti()
+      satirYokEt(satir)
+    }
+  }
+}
+const satirYokEt = async (satir) => {
+  const sutunlar = document.querySelectorAll(`.satir${satir}`)
+  sutunlar.forEach(sutun => {
+    sutun.style.transition = 'ease all 0.3s'
+    if (sutun.classList.value.includes('bg-')) sutun.classList.remove(`bg-${sutun.classList.value.split('bg-')[1]}`)
+    if (sutun.getAttribute('blokId') != 'yok') sutun.setAttribute('blokId', 'yok')
+    setTimeout(()=>{sutun.style.transition = ''},300)
+  })
+  satirlariKaydir(satir)
+}
+const skorDegisti = ()=>{
+  if(skor>=5000) {seviye=2;normalInizHizi = 300}
+  if(skor>=7500) {seviye=3;normalInizHizi = 250}
+  if(skor>=10000) {seviye=4;normalInizHizi = 200}
+  if(skor>=17500) {seviye=5;normalInizHizi = 150}
+  if(skor>=25000) {seviye=6;normalInizHizi = 100}
+  document.getElementById('skor').innerHTML = skor
+  document.getElementById('sev').innerHTML = seviye
+}
+
+var sureArttir = setInterval(()=>{sure += 1;document.getElementById('sure').innerHTML = sure},1000)
+
+async function satirlariKaydir(patlayanSatir) {
+
+  for (let satirNo = patlayanSatir; satirNo > 0; satirNo--) {
+    // Tamamlanan satırın üstündeki satırları altı kaydıracağız
+    // mevcut  satir => alttaki
+    // sonraki satir => üstteki
+    const satir = document.querySelectorAll(`.satir${satirNo}`)
+    let sonrakiEleman = 'yok'
+    satir.forEach(async (sutun)=>{
+      if(document.getElementById(`r${Number(sutun.getAttribute('satir'))-1}c${Number(sutun.getAttribute('sutun'))}`)){
+        // Genel
+        const satirNo = Number(sutun.getAttribute('satir'))
+        const sutunNo = Number(sutun.getAttribute('sutun'))
+
+        // Mevcut Eleman (alt)
+        const mel = document.getElementById(`r${satirNo}c${sutunNo}`)
+        const mbid = mel.getAttribute('blokId')
+        let mrs= mel.classList.value.includes('bg-') ? `bg-${mel.classList.value.split('bg-')[1].split('bg-')[0]}` : 'yok'
+        const mrenkSinifi = mrs
+
+        // Sonraki Eleman (üst)
+        const sel = document.getElementById(`r${satirNo-1}c${sutunNo}`)
+        const sbid = sel.getAttribute('blokId')
+        let srs= sel.classList.value.includes('bg-') ? `bg-${sel.classList.value.split('bg-')[1].split('bg-')[0]}` : 'yok'
+        const srenkSinifi = srs
+
+        mel.setAttribute('blokId',sbid)
+        if(mrenkSinifi!='yok') mel.classList.remove(mrenkSinifi)
+        if(srenkSinifi!='yok') mel.classList.add(srenkSinifi)
+      }
+    })
+  }
+}
+
+const bekle = (sure) => new Promise(resolve=>setTimeout(()=>resolve(true),sure))
+
+document.addEventListener('keydown', (e) => {
+  if (e.key == "ArrowUp") blokCevir()
+  else if (e.key == "ArrowRight") sagaGit()
+  else if (e.key == "ArrowLeft") solaGit()
+  else if (e.key == "ArrowDown") altaGit()
+  else if (e.key == "c") blokKaydet()
+  else if (e.key == "Escape") yercekiminiKapat()
+  else if (e.key == "p" || e.key == "P") yercekiminiGuncelle(normalInizHizi)
+  else if (e.key === " " || e.key == "Enter") tamamenIndir()
+})
+
+window.onload = kurulum()
+    </script>
+  </body>
+</html>
