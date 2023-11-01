@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="index.css">
+  <title>Ömer Salık</title>
+  <style>
+    body{
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(50,50,50);
+}
+
+.lostButton{
+  transition: 0.2s;
+  cursor: pointer;
+  background-color: rgb(150,100,100) !important;
+}
+.lostButton:hover{ background-color: rgb(255,100,100) !important; }
+
+.angleButton{
+  transition: 0.2s;
+  cursor: pointer;
+  background-color: rgb(150,200,100) !important;
+}
+.angleButton:hover{ background-color: rgb(0,200,25) !important; }
+
+#gameContent{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gearUp{
+  cursor: pointer;
+  transition: 0.2s;
+  background-color: lightgreen !important;
+}
+.gearUp:hover{ background-color: green !important; }
+.gearDown{
+  cursor: pointer;
+  transition: 0.2s;
+  background-color: red !important;
+}
+.gearDown:hover{ background-color: darkred !important; }
+
+.omerflex{
+  padding: 5%;
+  display: flex;
+  align-items: center;
+  width: 100% !important;
+  height: 80% !important;
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: start;
+}
+.box{
+  text-align: center;
+  box-sizing: border-box;
+  border-radius: 5px;
+  padding:0.3em;
+  width: 100% !important;
+  background-color: rgb(135,135,135);
+}
+.box:not(:first-child){ margin-top:0.5em; }
+
+#myCanvas{
+  cursor: none;
+  border-radius: 3px;
+  background-color: rgb(150,150,150);
+}
+
+.w-100{width: 100%;}
+.h-100{height: 100%;}
+.text-center{text-align: center;}
+  </style>
+</head>
+<body>
+  <table class="w-100 h-100">
+    <tr class="w-100 h-100">
+      <td class="h-100 a" style="width: 10%;">
+        <div class="omerflex">
+          <div class="box lostButton" onclick="imLost()">
+            <b>Kayboldum (Q)</b>
+          </div>
+
+          <div class="box angleButton" onclick="imLost()">
+            <b>Beni Düzelt (E)</b>
+          </div>
+
+          <div class="box">
+            <b>Hız : <b id="speed">0</b></b>
+          </div>
+
+          <div class="box">
+            <b>Açı : <b id="angle">01</b></b>
+          </div>
+
+          <div class="box">
+            <b>Vites : <b id="gear">1</b></b>
+          </div>
+
+          <div class="box">
+            <b>Vites Sayacı : <b id="gearTimer">0</b></b>
+          </div>
+
+          <div class="box gearUp" onclick="car.gearUp()">
+            <b> Arttır (SHFIT)</b>
+          </div>
+
+          <div class="box gearDown" onclick="car.gearDown()">
+            <b>Düşür (CTRL)</b>
+          </div>
+        </div>
+      </td>
+      <td class="h-100" style="width: 80%;">
+        <div id="gameContent">
+          <canvas id="myCanvas"></canvas>
+        </div>
+      </td>
+      <td class="h-100" style="width: 10%;"></td>
+    </tr>
+  </table>
+  <script>
+class Functions{
+  constructor(){}
+  mf=t=>Math.floor(t)
+  log=t=>console.log(t)
+  table=t=>console.table(t)
+  dq=t=>document.querySelector(t)
+  gid=t=>document.getElementById(t)
+  dqa=t=>document.querySelectorAll(t)
+  rs=(min,max)=>this.mf(Math.random()*(max-min))+min
+  lerp=(a,b,c)=>a+(b-a)*c
+  getIntersection=(A,B,C,D)=>{
+    const tTop = (D.x-C.x)*(A.y-C.y)-(D.y-C.y)*(A.x-C.x)
+    const uTop = (C.y-A.y)*(A.x-B.x)-(C.x-A.x)*(A.y-B.y)
+    const bottom = (D.y-C.y)*(B.x-A.x)-(D.x-C.x)*(B.y-A.y)
+    if(bottom!=0){
+      const t = tTop/bottom
+      const u = uTop/bottom
+      if(t>=0&&t<=1&&u>=0&&u<=1) return{ x:this.lerp(A.x,B.x,t), y:this.lerp(A.y,B.y,t), offsetT:t, offsetU:u }
+    }
+    return null;
+  }
+}
+class Sensor{
+  constructor(car){
+    this.f = new Functions()
+    this.car = car
+    this.ray={
+      "count":5,
+      "spread":Math.PI/4,
+      "length":this.car.h*3,
+      "readings":[],
+      "rays":[],
+    }
+    this.doItForOnce = true
+  }
+
+  #setRays(){
+    var newRaysArray = []
+    for (let i = 0; i < this.ray.count; i++) {
+      const rayAngle = this.f.lerp(this.ray.spread/2,-this.ray.spread/2,this.ray.count==1?0.5:i/(this.ray.count-1))+this.car.car.angle
+      const start = { x:this.car.x, y:this.car.y }
+      const end = {
+        x:this.car.x-Math.sin(rayAngle)*this.ray.length,
+        y:this.car.y-Math.cos(rayAngle)*this.ray.length}
+      newRaysArray.push({"start":start,"end":end})
+    }
+    this.ray.rays = newRaysArray
+  }
+
+  #getReadings(ray,roadBorders){
+    const rayIndex = this.ray.rays.indexOf(ray)
+    var touches = []
+    var touch=false
+    for (let i = 0; i < roadBorders.length; i++) {
+      const roadBorder = roadBorders[i]
+      const touch = this.f.getIntersection(ray.start,ray.end,roadBorder[0],roadBorder[1])
+      touch?touches.push(touch):false
+    }
+    if(touches.length>0){
+      const offsets = touches.map(e=>e.offsetT)
+      const min = Math.min(...offsets)
+      const el = touches[touches.findIndex(e=>e.offsetT==min)]
+      return el
+    }
+    return null
+  }
+
+  update(roadBorders){
+    this.#setRays()
+    this.ray.readings=[]
+    this.ray.rays.forEach(ray=>this.ray.readings.push(this.#getReadings(ray,roadBorders)))
+  }
+
+  draw(context){
+    const normalColor = 'red'
+    const errorColor = 'white'
+    this.context = context
+    const { readings } = this.ray
+    for (let i = 0; i < this.ray.rays.length; i++) {
+      const ray = this.ray.rays[i]
+      const reading = readings[i]
+      if(reading){
+        context.beginPath()
+        context.lineWidth=2
+        context.strokeStyle=normalColor
+        context.moveTo(ray.start.x, ray.start.y)
+        context.lineTo(reading.x, reading.y)
+        context.stroke()
+        context.beginPath()
+        context.lineWidth=1
+        context.strokeStyle=errorColor
+        context.moveTo(reading.x, reading.y)
+        context.lineTo(ray.end.x, ray.end.y)
+        context.stroke()
+      }else{
+        context.beginPath()
+        context.strokeStyle=normalColor
+        context.lineWidth=2
+        context.moveTo(ray.start.x, ray.start.y)
+        context.lineTo(ray.end.x, ray.end.y)
+        context.stroke()
+      }
+    }
+    this.ray.rays.forEach(ray=>{
+      
+    })
+  }
+
+}
+class Road{
+  constructor(x,width,laneCount=5){
+    this.infinity = 1024*1024
+    this.f = new Functions()
+
+    this.laneCount = laneCount
+    this.width = width
+    this.x = x
+
+    this.left = x-this.width/2
+    this.right = x+this.width/2
+
+    this.top = -this.infinity
+    this.bottom = this.infinity
+    
+    this.laneCenters = []
+
+    const topLeft = { x:this.left, y:this.top }
+    const topRight = { x:this.right, y:this.top }
+    const bottomLeft = { x:this.left, y:this.bottom }
+    const bottomRight = { x:this.right, y:this.bottom }
+
+    this.borders = [ [topLeft,bottomLeft], [topRight,bottomRight] ]
+  }
+
+
+  getLaneCenter=laneIndex=>this.left+(this.width/this.laneCount)/2 + (Math.min(laneIndex,this.laneCount-1)*(this.width/this.laneCount))
+
+  draw(context){
+    var centerOfTheLanes = []
+    context.lineWidth=5
+    context.strokeStyle="yellow"
+    for (let i = 1; i < this.laneCount; i++) {
+      const x = this.f.lerp(this.left,this.right,i/this.laneCount)
+      context.setLineDash([40,20])
+      centerOfTheLanes.push(this.getLaneCenter(i))
+      context.beginPath()
+      context.moveTo(x,this.top)
+      context.lineTo(x,this.bottom)
+      context.stroke()
+    }
+
+    context.setLineDash([])
+    this.borders.forEach(border=>{
+      context.beginPath()
+      context.moveTo(border[0].x,border[0].y)
+      context.lineTo(border[1].x,border[1].y)
+      context.stroke()
+    })
+    this.laneCenters = centerOfTheLanes
+  }
+}
+class Controls {
+  constructor() {
+    this.#addKeyboardListenersAndSetKeys()
+    this.keys = {
+      'ArrowUp':false,
+      'ArrowDown':false,
+      'ArrowRight':false,
+      'ArrowLeft':false,
+      ' ':false
+    }
+    this.f = new Functions()
+  }
+
+  #addKeyboardListenersAndSetKeys() {
+    document.onkeydown=e=>this.keys[e.key]=true
+    document.onkeyup=e=>this.keys[e.key]=false
+  }
+}
+class Car {
+  constructor(x, y, w, h, t, c='black') {
+    this.fx = x
+    this.fy = y
+    this.x = x
+    this.y = y
+    this.w = w
+    this.h = h
+    this.t = t
+    this.c = c
+    this.object = 'none'
+
+    this.doItForOnce = { "log":true, "gameOver":true }
+    
+    this.f = new Functions()
+    t=='KEYS'?this.controls = new Controls():this.controls = { keys:{ ArrowUp:true } }
+    this.sensor = new Sensor(this)
+
+    this.car = {
+      "gear": t=='KEYS'?1:2,
+      "angle": 0,
+      "speed": 0,
+      "con": true,
+      "MaxSpeed": t=='KEYS'?2:5,
+      "gearTime": 1,
+      "damaged": false,
+      "acceleration": 0.3,
+      "brakeResistance": 0.5,
+      "engineBrakeResistance": 0.5,
+      "steeringWheelSoftness": 0.007,
+      "gearLevels": { "1":2, "2":6, "3":10, "4":15, "5":25, "6":1000 }
+    }
+    this.gearTime=0.02
+    this.game = { "friction": 0.2 }
+  }
+
+  lost(){
+    this.x = this.fx
+    this.y = this.fy
+    this.car.angle = 0
+  }
+  gearUp(){
+    const el = this.f.gid('gear')
+    if (this.gearTime <= 0){
+      if(this.car.gearLevels[`${this.car.gear+1}`]) {
+        this.car.gear+=1
+        this.car.MaxSpeed = this.car.gearLevels[`${this.car.gear}`]
+        el ? el.innerHTML=this.car.gear : false
+        this.gearTime=this.car.gearTime
+      }
+    }
+  }
+  gearDown(){
+    const el = this.f.gid('gear')
+    if (this.gearTime <= 0){
+      if(this.car.gearLevels[`${this.car.gear-1}`]) {
+        this.car.gear-=1
+        this.car.MaxSpeed = this.car.gearLevels[`${this.car.gear}`]
+        el ? el.innerHTML=this.car.gear : false
+        this.gearTime=this.car.gearTime/3
+      }
+    }
+  }
+  setNewGear(gear){
+    const el = this.f.gid('gear')
+    if(this.car.gearLevels[gear]) {
+      this.car.gear=gear
+      this.car.MaxSpeed = this.car.gearLevels[`${this.car.gear}`]
+      el ? el.innerHTML=this.car.gear : false
+      this.gearTime=this.car.gearTime/3
+    }
+  }
+  #setGear(){
+    const { "Shift":up, "Control":down } = this.controls.keys
+    if (this.gearTime > 0) {
+      const newEl = this.f.gid('gearTimer')
+      var gearTimeCounter = setInterval(() => {
+        if(this.gearTime<=0){
+          newEl ? newEl.innerHTML='0 <span style="color:lightgreen;"> Değişebilir </span>' : false
+          clearInterval(gearTimeCounter)
+        }else{
+          this.gearTime -= 0.0001
+          newEl ? newEl.innerHTML=this.gearTime.toFixed(4) : false
+        }
+      }, 1);
+    }else{
+      this.gearTime=0
+      if(up && !down) this.gearUp()
+      else if(!up && down) this.gearDown()
+    }
+    
+  }
+  #useFriction() {
+    if (this.car.speed > 0) this.car.speed - this.game.friction >= 0 ? this.car.speed -= this.game.friction : this.car.speed = 0
+    else if (this.car.speed < 0) this.car.speed + this.game.friction <= 0 ? this.car.speed += this.game.friction : this.car.speed = 0
+  }
+  #useBrake() {
+    if(this.controls.keys[" "]){
+      if (this.car.speed > 0) this.car.speed - this.car.brakeResistance >= 0 ? this.car.speed -= this.car.brakeResistance : this.car.speed = 0
+      else if (this.car.speed < 0) this.car.speed + this.car.brakeResistance <= 0 ? this.car.speed += this.car.brakeResistance : this.car.speed = 0
+    }
+  }
+  #move(){
+    this.#setGear()
+
+    const { "ArrowUp":forward, "ArrowDown":backward, "ArrowRight":right, "ArrowLeft":left } = this.controls.keys
+
+    let p=false,pway='none'
+    for (let i = 0; i < this.sensor.ray.readings.length; i++) {
+      const reading = this.sensor.ray.readings[i]
+      if(reading) {
+        p=true
+        const lowerCondition = i<this.sensor.ray.readings.length/2
+        const equalCondition = i==this.sensor.ray.readings.length/2
+        const greaterCondition = i>this.sensor.ray.readings.length/2
+        if(lowerCondition) pway='low'
+        else if(equalCondition) pway='equla'
+        else if(greaterCondition) pway='great'
+      }
+    }
+    if(!this.car.damaged){
+      if(forward && !backward) this.car.speed-=this.car.acceleration
+      else if(!forward && backward) if(this.car.speed+this.car.acceleration>=-this.car.MaxSpeed/2) this.car.speed+=this.car.acceleration
+    }
+
+
+    if(this.car.speed>1||this.car.speed<-1){
+      if(right && !left && this.object!='right') this.car.angle+=this.car.steeringWheelSoftness * (this.car.speed/4)
+      else if(left && !right && this.object!='left') this.car.angle-=this.car.steeringWheelSoftness * (this.car.speed/4)
+    }else{
+      if(right && !left && this.object!='right') this.car.angle+=this.car.steeringWheelSoftness * (this.car.speed/4)
+      else if(left && !right && this.object!='left') this.car.angle-=this.car.steeringWheelSoftness * (this.car.speed/4)
+    }
+
+    if(this.car.speed > this.car.MaxSpeed/2) this.car.speed-this.car.engineBrakeResistance>=this.car.MaxSpeed/2 ? this.car.speed -= this.car.engineBrakeResistance : this.car.speed=this.car.MaxSpeed/2
+    else if(this.car.speed < -this.car.MaxSpeed) this.car.speed+this.car.engineBrakeResistance<=-this.car.MaxSpeed?this.car.speed+=this.car.engineBrakeResistance:this.car.speed=-this.car.MaxSpeed
+
+    this.#useBrake()
+    this.#useFriction()
+    
+    this.y += Math.cos(this.car.angle) * this.car.speed
+    this.x+=Math.sin(this.car.angle)*this.car.speed
+
+    const speed = this.f.gid('speed')
+    const angle = this.f.gid('angle')
+    speed ? speed.innerHTML=this.car.speed.toFixed(2) : false
+    if(speed) this.car.speed==0 ? speed.innerHTML='0' : speed.innerHTML=this.car.speed.toFixed(2)
+    angle ? angle.innerHTML=this.car.angle.toFixed(2) : false
+    if(angle) this.car.angle==0 ? angle.innerHTML='0' : angle.innerHTML=this.car.angle.toFixed(2)
+  }
+  #createPolygon(){
+    const points=[]
+    const rad=Math.hypot(this.w,this.h)/2
+    const alpha=Math.atan2(this.w,this.h)
+    points.push({ x:this.x-Math.sin(this.car.angle-alpha)*rad, y:this.y-Math.cos(this.car.angle-alpha)*rad })
+    points.push({ x:this.x-Math.sin(this.car.angle+alpha)*rad, y:this.y-Math.cos(this.car.angle+alpha)*rad })
+    points.push({ x:this.x-Math.sin(Math.PI+this.car.angle-alpha)*rad, y:this.y-Math.cos(Math.PI+this.car.angle-alpha)*rad })
+    points.push({ x:this.x-Math.sin(Math.PI+this.car.angle+alpha)*rad, y:this.y-Math.cos(Math.PI+this.car.angle+alpha)*rad })
+    this.polygon=points
+  }
+  #isDamaged(roadBorders){
+    const poly1=this.polygon
+    for (let k = 0; k < roadBorders.length; k++) {
+      const poly2=roadBorders[k]
+      for (let i = 0; i < poly1.length; i++) for (let j = 0; j < poly2.length; j++) if(this.f.getIntersection( poly1[i], i+1==poly1.length?poly1[0]:poly1[i+1], poly2[j], j+1==poly2.length?poly2[0]:poly2[j+1] )) {this.car.con=false;return true}
+    }
+
+    const cars = this.tr
+    cars.forEach(car=>{
+      const poly2 = car.polygon
+      for (let i = 0; i < poly1.length; i++){
+        for (let j = 0; j < poly2.length; j++){
+          const touch = this.f.getIntersection( poly1[i], i+1==poly1.length?poly1[0]:poly1[i+1], poly2[j], j+1==poly2.length?poly2[0]:poly2[j+1] )
+          if(touch) {
+            this.car.damaged=true
+            this.car.con=false
+            return true
+          }
+        }
+      }
+    })
+    
+    const { "ArrowUp":forward, "ArrowDown":backward } = this.controls.keys
+    const { gear, speed } = this.car
+    const c1 = speed<1
+    const c2 = speed>-1
+    const c3 = gear<=2
+    if(((c1&&c2&&c3) || (speed>1 || speed<-1))&&!this.car.damaged){
+      if(forward && !backward) this.car.speed-=this.car.acceleration
+      else if(!forward && backward) if(this.car.speed+this.car.acceleration>=-this.car.MaxSpeed/2) this.car.speed+=this.car.acceleration
+      
+      if(gear<4 && speed<0 && speed<-10) return true
+      else if(gear<4 && speed>0 && speed>10) return true
+      else if(gear<5 && speed<0 && speed<-35) return true
+      else if(gear<5 && speed>0 && speed>35) return true
+    }else{
+      if(forward || backward) return true
+    }
+    return false
+  }
+  #gameOver(){
+    const el = this.f.gid('gameOver')
+    if(el) el.style.display='flex'
+  }
+  update(roadBorders,tr){
+    this.tr = tr
+    this.car.damaged=this.car.con==false?true:this.car.damaged
+    if(this.car.con){
+      this.#move()
+      this.#createPolygon()
+      !this.car.damaged&&this.t=='KEYS'?this.car.damaged = this.#isDamaged(roadBorders):false
+    }
+    // this.t=='KEYS'?this.sensor.update(roadBorders):false
+  }
+  draw(context) {
+    if(this.polygon){
+      context.fillStyle=this.car.damaged?'rgb(225,225,225)':this.c;
+      context.beginPath()
+      context.moveTo(this.polygon[0].x,this.polygon[0].y)
+      for (let i=1;i<this.polygon.length;i++) {
+        const point = this.polygon[i]
+        context.lineTo(this.polygon[i].x,this.polygon[i].y)
+      }
+      context.fill();
+    }
+    this.sensor.draw(context)
+  }
+}
+const f = new Functions()
+const canvas = f.gid('myCanvas')
+const body = f.dq('body')
+
+var context, canvasWidth, canvasHeight, car, road
+context = canvas.getContext("2d")
+// canvasWidth = document.body.offsetWidth*0.8
+canvasWidth = 450
+canvas.width = canvasWidth
+canvasHeight = document.body.offsetHeight*0.99
+
+road = new Road(canvasWidth/2,canvasWidth*0.90)
+car = new Car(road.getLaneCenter(2),canvasHeight/2,30,60,'KEYS','blue')
+
+var traffic = [
+  // new Car(road.getLaneCenter(2),canvasHeight/2,30,60,'PUPPET','red')
+]
+
+function addCar(){
+  var cars = []
+  const carCount = road.laneCenters.length
+  // while (cars.length<carCount) {
+  while (true){
+    const rs = f.rs(0,carCount+1)
+    const roadCenter = road.getLaneCenter(rs)
+    if(!cars.includes(roadCenter))cars.push(roadCenter)
+    if(cars.length>=carCount){
+      return cars
+    }
+  }
+}
+
+const carRow = 10
+
+async function setTraffic(){
+  road.draw(context)
+  for (let i = 0; i < carRow; i++) {
+    const cars = addCar()
+    cars.forEach(row=>{
+      const newCar = new Car(row,canvasHeight/3-60*(6.5*i),50,90,'PUPPET','red')
+      traffic.push(newCar)
+    })
+  }
+}
+
+const imLost=()=>car.lost()
+function animate() {
+  for (let i = 0; i < traffic.length; i++) traffic[i].update(road.borders)
+  car.update(road.borders,traffic)
+  // canvas.width = document.body.offsetWidth*0.8
+  canvas.height = document.body.offsetHeight*0.99
+  context.save()
+  context.translate(0, -car.y+canvas.height*0.7);
+  road.draw(context)
+  for (let i = 0; i < traffic.length; i++) traffic[i].draw(context)
+  car.draw(context)
+  context.restore()
+  requestAnimationFrame(animate)
+}
+
+setTraffic()
+animate()
+
+document.onkeypress=(e)=>{
+  if(e.key.toLocaleLowerCase()=="q")car.lost()
+  if(e.key.toLocaleLowerCase()=="e")car.car.angle=0
+}
+
+const restartGame = ()=>window.location.reload()
+  </script>
+  <script src="index.js"></script>
+</body>
+</html>
