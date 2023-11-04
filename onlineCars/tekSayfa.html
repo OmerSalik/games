@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+      body{
+  margin:0;
+  padding:0;
+}
+.daj{
+  display: flex;
+  align-items: center; 
+  justify-content: center;
+}
+.fdc{ flex-direction: column; }
+.w-100{ width: 100%; }
+
+.cp{ cursor:pointer; }
+
+#mainContainer{
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+}
+
+#vitesDiv{
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+#mainContainerNavbar{
+  width: 37%;
+  display: flex;
+  justify-content: start;
+  align-items: end;
+  margin-bottom: 0.75rem;
+}
+
+#myCanvas{
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px black;
+}
+
+#secim{
+  background-color: rgba(0,0,0,0.5);
+  justify-content: space-around;
+  align-items: center;
+  position: fixed;
+  display: flex;
+  bottom:0;
+  right:0;
+  left:0;
+  top:0;
+}
+    </style>
+  </head>
+  <body>
+    <div id="secim">
+      <button type="button" class="btn btn-danger" onclick="baslat('red')"> Kırmızı </button>
+      <button type="button" class="btn btn-primary" onclick="baslat('blue')"> Mavi </button>
+      <button type="button" class="btn btn-info" onclick="baslat('lightblue')"> Açık Mavi </button>
+      <button type="button" class="btn btn-warning" onclick="baslat('yellow')"> Sarı </button>
+      <button type="button" class="btn btn-dark" onclick="baslat('black')"> Siyah </button>
+      <button type="button" class="btn btn-secondary" onclick="baslat('gray')"> Gri </button>
+      <button type="button" class="btn btn-success" onclick="baslat('green')"> Yeşil </button>
+    </div>
+    <div id="mainContainer" class="daj">
+      <div id="mainContainerNavbar">
+        <div class="rounded fs-5 px-2 py-1" id="vitesDiv">
+          <div class="rounded fs-5 px-2 py-1 text-center text-bg-danger">Vites : <span id="vites"></span></div>
+          <div class="rounded fs-5 px-2 py-1 text-center text-bg-warning mb-2">Vites Sayacı : <span id="vitesSayaci"></span></div>
+        </div>
+        <div class="rounded fs-5 px-2 py-1">
+          <div class="rounded fs-5 px-2 py-1 text-bg-success">Hız : <span id="hiz"></span></div>
+        </div>
+      </div>
+      <canvas id="myCanvas"></canvas>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+      class Functions{
+  constructor(){}
+  mf=t=>Math.floor(t)
+  log=t=>console.log(t)
+  table=t=>console.table(t)
+  clear=()=>console.clear()
+  qs=t=>document.querySelector(t)
+  gid=t=>document.getElementById(t)
+  qsa=t=>document.querySelectorAll(t)
+  hidden=t=>document.getElementById(t).hidden=!document.getElementById(t).hidden
+  rs=(min,max)=>this.mf(Math.random()*(max-min))+min
+  lerp=(a,b,c)=>a+(b-a)*c
+  getIntersection=(A,B,C,D)=>{
+    const tTop = (D.x-C.x)*(A.y-C.y)-(D.y-C.y)*(A.x-C.x)
+    const uTop = (C.y-A.y)*(A.x-B.x)-(C.x-A.x)*(A.y-B.y)
+    const bottom = (D.y-C.y)*(B.x-A.x)-(D.x-C.x)*(B.y-A.y)
+    if(bottom!=0){
+      const t = tTop/bottom
+      const u = uTop/bottom
+      if(t>=0&&t<=1&&u>=0&&u<=1) return{ x:this.lerp(A.x,B.x,t), y:this.lerp(A.y,B.y,t), offsetT:t, offsetU:u }
+    }
+    return null;
+  }
+}
+      var ben = {}
+const f = new Functions()
+const socket = io('http://localhost:1331')
+const canvas = f.qs('#myCanvas')
+const context = canvas.getContext('2d');
+const gh=()=>document.body.offsetHeight*0.65
+socket.on('ben',id=>ben.id=id)
+var tuslar = {}
+var araba = {}
+var oyun = { surtunme:0.2 }
+document.onkeydown=e=>tuslar[e.key]=true
+document.onkeyup=e=>tuslar[e.key]=false
+const ozellikler = f.gid('mainContainerNavbar')
+const vitesEl = f.gid('vites')
+const vitesSayacisEl = f.gid('vitesSayaci')
+const hizEl = f.gid('hiz')
+var arabalar = []
+window.onload=()=>{
+  canvas.width=gh()*2
+  canvas.height=gh()
+}
+const animate=()=>{
+  context.clearRect(0, 0, gh()*2, gh());
+  canvas.width=gh()*2
+  canvas.height=gh()
+  poligonOlustur(araba)
+  guncelle(araba)
+  if(arabalar.length>0){
+    arabalar.forEach(digerAraba=>ciz(digerAraba))
+  }
+  socket.emit('arabaGuncelle',{ id:ben.id, araba:araba })
+  requestAnimationFrame(animate)
+}
+const baslat=r=>{
+  f.gid('secim').style.display='none'
+  araba = { 
+    x:gh()*2/2, 
+    y:gh()/2, 
+    w:30, 
+    h:60, 
+    renk:r, 
+    aci:0, 
+    hiz:0, 
+    vites:1, 
+    hizlanma:0.5, 
+    vitesSuresi:0.5, 
+    direksiyonHassasiyeti:0.003, 
+    maximumHiz:3, 
+    motorFreniGucu:0.2, 
+    frenGucu:0.1, 
+    poligon:[], 
+    vitesSeviyeleri:{ 
+      "-1":{ 
+        motorFreniGucu:-0.1, 
+        hizlanma:-0.22, 
+        maximumHiz:8, 
+        vitesSayaci:0.2, 
+        istopSiniri:-7, 
+        isim:"R" 
+      }, 
+      "0":{ 
+        motorFreniGucu:0, 
+        hizlanma:0, 
+        maximumHiz:999999, 
+        istopSiniri:999999, 
+        vitesSayaci:0.1, 
+        isim:"N" 
+      }, 
+      "1":{ 
+        motorFreniGucu:0.2, 
+        hizlanma:0.5, 
+        maximumHiz:3, 
+        istopSiniri:7, 
+        vitesSayaci:0.5, 
+        isim:"1" 
+      }, 
+      "2":{ 
+        motorFreniGucu:0.35, 
+        hizlanma:0.4, 
+        maximumHiz:6, 
+        istopSiniri:11, 
+        vitesSayaci:0.8, 
+        isim:"2" 
+      }, 
+      "3":{ 
+        motorFreniGucu:0.4, 
+        hizlanma:0.3, 
+        maximumHiz:10, 
+        vitesSayaci:0.7, 
+        istopSiniri:20, 
+        isim:"3" 
+      }, 
+      "4":{ 
+        motorFreniGucu:0.55, 
+        hizlanma:0.25, 
+        maximumHiz:15, 
+        istopSiniri:35, 
+        vitesSayaci:0.7, 
+        isim:"4" 
+      }, 
+      "5":{ 
+        motorFreniGucu:0.7, 
+        hizlanma:0.21, 
+        maximumHiz:25, 
+        istopSiniri:70, 
+        vitesSayaci:0.7, 
+        isim:"5" 
+      }
+    },
+  }
+  socket.emit('arabaEkle',{ id:ben.id, araba:araba })
+  animate()
+}
+const guncelle=el=>{
+  vitesKontrol(el)
+  hareket(el)
+  yazdir(el)
+}
+const yazdir=el=>{
+  vitesEl.innerHTML=el.vitesSeviyeleri[el.vites].isim
+  hizEl.innerHTML=el.hiz==0?'0.00':el.hiz.toFixed(2)
+  vitesSayacisEl.innerHTML=el.vitesSuresi.toFixed(2)
+}
+const hareket=el=>{
+  const { ' ':fren, 'ArrowUp':ileri,'ArrowDown':geri, 'ArrowLeft':sol, 'ArrowRight':sag,'Shift':va, 'Control':vb } = tuslar
+  if(ileri||(el.vites=="-1"&&geri)){
+    el.hiz+=el.hizlanma
+  }
+  if(el.hiz>0&&el.hiz>el.maximumHiz)el.hiz=el.maximumHiz
+  else if(el.hiz<0&&el.hiz<-el.maximumHiz/2)el.hiz=-el.maximumHiz/2
+  if(sag&&!sol) el.aci-=el.direksiyonHassasiyeti*el.hiz
+  if(!sag&&sol) el.aci+=el.direksiyonHassasiyeti*el.hiz
+
+  if(el.hiz!=0) {
+    if(fren){
+      if(el.hiz>0)el.hiz-el.frenGucu>=0?el.hiz-=el.frenGucu:el.hiz=0
+      if(el.hiz<0)el.hiz+el.frenGucu<=0?el.hiz+=el.frenGucu:el.hiz=0
+    }
+    if(el.hiz>0)el.hiz-oyun.surtunme>=0?el.hiz-=oyun.surtunme:el.hiz=0
+    if(el.hiz<0)el.hiz+oyun.surtunme<=0?el.hiz+=oyun.surtunme:el.hiz=0
+  }
+
+  el.y-=Math.cos(el.aci)*el.hiz
+  el.x-=Math.sin(el.aci)*el.hiz
+}
+const vitesKontrol=el=>{
+  const { 'Shift':arttir, 'Control':azalt } = tuslar
+  const sure = 0.01
+  if(el.vitesSuresi!=0 && el.vitesSuresi>0)el.vitesSuresi-sure>=0?el.vitesSuresi-=sure:el.vitesSuresi=0
+  else{
+    if(arttir && !azalt){
+      const yeniVites = el.vites+1
+      if(el.vitesSeviyeleri[yeniVites]) {
+        el.vites=yeniVites
+        const vites = el.vitesSeviyeleri[el.vites]
+        el.vitesSuresi=vites.vitesSayaci
+        el.hizlanma = vites.hizlanma
+        el.istopSiniri = vites.istopSiniri
+        el.maximumHiz = vites.maximumHiz
+        el.motorFreniGucu = vites.motorFreniGucu
+      }
+    }else if(!arttir && azalt){
+      const yeniVites = el.vites-1
+      if(el.vitesSeviyeleri[yeniVites]) {
+        el.vites=yeniVites
+        const vites = el.vitesSeviyeleri[el.vites]
+        el.vitesSuresi=vites.vitesSayaci
+        el.hizlanma = vites.hizlanma
+        el.istopSiniri = vites.istopSiniri
+        el.maximumHiz = vites.maximumHiz
+        el.motorFreniGucu = vites.motorFreniGucu
+      }
+    }
+  }
+}
+const ciz=el=>{
+  context.beginPath();
+  context.fillStyle = el.renk
+  context.strokeStyle='transparent'
+  context.lineWidth = 2
+  for (let i = 0; i < el.poligon.length; i++)context.lineTo(el.poligon[i].x, el.poligon[i].y)
+  context.closePath()
+  context.stroke()
+  context.fill(); 
+}
+const poligonOlustur=()=>{
+  const el = araba
+  const points=[]
+  const rad=Math.hypot(el.w,el.h)/2
+  const alfa=Math.atan2(el.w,el.h)
+  points.push({ x:el.x-Math.sin(el.aci-alfa)*rad, y:el.y-Math.cos(el.aci-alfa)*rad })
+  points.push({ x:el.x-Math.sin(el.aci+alfa)*rad, y:el.y-Math.cos(el.aci+alfa)*rad })
+  points.push({ x:el.x-Math.sin(Math.PI+el.aci-alfa)*rad, y:el.y-Math.cos(Math.PI+el.aci-alfa)*rad })
+  points.push({ x:el.x-Math.sin(Math.PI+el.aci+alfa)*rad, y:el.y-Math.cos(Math.PI+el.aci+alfa)*rad })
+  araba.poligon=points
+}
+
+socket.on('arabalar',digerArabalar=>arabalar=digerArabalar)
+socket.on('log',t=>console.log(t))
+    </script>
+  </body>
+</html>
