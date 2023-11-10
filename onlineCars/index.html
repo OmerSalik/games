@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Çevrimiçi Arabalar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.9.0/sweetalert2.min.css" integrity="sha512-IScV5kvJo+TIPbxENerxZcEpu9VrLUGh1qYWv6Z9aylhxWE4k4Fch3CHl0IYYmN+jrnWQBPlpoTVoWfSMakoKA==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <link rel="stylesheet" href="main.css">
+    <link rel="icon" href="resimler/arabayellow.png">
+  </head>
+  <body>
+    <div id="sayac"><span></span></div>
+    <div class="ortala">
+      <div class="myContainer">
+        <div id="ozellikler">
+          <div class="cn rounded p-2 bg-dark border border-warning text-warning"> Vites : <span id="vites"></span> </div>
+          <div class="cn rounded p-2 bg-dark border border-danger text-danger"> Hız : <span id="hiz"></span> </div>
+          <div class="btn btn-success" onclick="basCek('Shift')"> Vites Arttır (Shift) </div>
+          <div class="btn btn-danger" onclick="basCek('Control')"> Vites Düşür (Control) </div>
+          <div class="cn rounded p-2 bg-dark border border-warning text-warning" id="oyun"> Oyun sahibinin oyunu baslatmasını veya 7 kişi olmayı bekle </div>
+          <div class="form-check form-switch d-flex p-0" style="width: max-content;margin-left: auto;margin-right: -6pt;">
+            <input type="checkbox" class="form-check-input fs-5 p-0" style="margin-top:7pt;" onchange="cizgilerGozuksun=this.checked">
+          </div>
+        </div>
+        <canvas id="myCanvas"></canvas>
+      </div>
+    </div>
+    <div id="arabaSecim">
+      <div>
+        <button type="button" class="btn btn-primary" onclick="baslat('arabapembe.png')"> Pembe </button>
+        <button type="button" class="btn btn-warning" onclick="baslat('arabasari.png')"> Sarı </button>
+        <button type="button" class="btn" style="background-color: #ff7f00;color: #fff;" onclick="baslat('arabaturuncu.png')"> Turuncu </button>
+        <button type="button" class="btn btn-danger" onclick="baslat('arabakirmizi.png')"> Kırmızı </button>
+        <button type="button" class="btn btn-dark" onclick="baslat('arabasiyah.png')"> Siyah </button>
+      </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.9.0/sweetalert2.min.js" integrity="sha512-GAaXlfJeIbLNG2LQu2v4pf8YEc7iPz+GE3LZyUmdR7d7Id5JsER9vmJVxMKw1MqmdlVh3NXxTxQVd9AS53G+4w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>
