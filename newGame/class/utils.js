@@ -17,7 +17,7 @@ export class Functions {
   gid = t => document.getElementById(t);
   hidden = t => document.getElementById(t).hidden=!document.getElementById(t).hidden;
   display = (t,d) => document.getElementById(t).style.display=document.getElementById(t).style.display==d?'none':d;
-  rs = (min, max) => this.mf(Math.random() * (max - min)) + min;
+  rs = (min, max) => this.mf(Math.random() * (( max + 1 ) - min)) + min;
   lerp = (a, b, c) => a + (b - a) * c;
   getIntersection = (A, B, C, D) => {
     const tTop = (D.x - C.x) * (A.y - C.y) - (D.y - C.y) * (A.x - C.x);

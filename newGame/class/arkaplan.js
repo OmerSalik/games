@@ -12,10 +12,8 @@ class Katman {
   guncelle() { this.x < -this.width ? this.x = 0 : this.x -= ( this.oyun.hiz * this.oyun.hizCarpani ) * this.kaymaHizi; }
 
   ciz(context) {
-    context.save();
     context.drawImage(this.resim, this.x, this.y, this.width, this.height);
     context.drawImage(this.resim, this.x + this.width, this.y, this.width, this.height);
-    context.restore();
   }
 }
 

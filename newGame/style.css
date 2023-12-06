@@ -6,7 +6,7 @@ img { display: none; }
 #myCanvas1 {
   background-color: rgba(150, 150, 150, 0.7);
   transform: translate(-50%, -50%);
-  border-bottom: 2px solid black;
+  border: 1px solid black;
   border-radius: 10px;
   position: absolute;
   left: 50%;
