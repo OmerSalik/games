@@ -1,0 +1,16 @@
+/* ELEMENTS */
+* { box-sizing: border-box; }
+img { display: none; }
+
+/* BY İD */
+#myCanvas1 {
+  background-color: rgba(150, 150, 150, 0.7);
+  transform: translate(-50%, -50%);
+  border: 1px solid black;
+  border-radius: 10px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+}
+
+/* BY CLASS */
